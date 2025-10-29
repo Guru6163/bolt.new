@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 
 import { BackgroundBeams } from "@/components/ui/background-beams"
 import { Badge } from "@/components/ui/badge"
@@ -20,12 +21,13 @@ const companyLogos = [
 
 export default function HomePage() {
   const [inputValue, setInputValue] = useState("")
+  const router = useRouter()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (inputValue.trim()) {
-      // Handle the submission here
-      console.log("Building:", inputValue)
+      // Navigate to builder page with the prompt
+      router.push(`/builder?prompt=${encodeURIComponent(inputValue)}`)
     }
   }
 

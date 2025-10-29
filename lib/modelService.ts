@@ -88,6 +88,7 @@ export class ModelService {
             throw new Error('No content received from OpenAI');
         }
 
+        console.log('OpenAI response:', content.substring(0, 500));
         return content;
     }
 
@@ -123,6 +124,7 @@ export class ModelService {
             throw new Error('No content received from Claude');
         }
 
+        console.log('Claude response:', content.substring(0, 500));
         return content;
     }
 

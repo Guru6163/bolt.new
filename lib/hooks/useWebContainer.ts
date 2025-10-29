@@ -6,12 +6,17 @@ import { WebContainer } from "@webcontainer/api";
 let instance: WebContainer | null = null;
 let instancePromise: Promise<WebContainer> | null = null;
 
-export function useWebContainer() {
+export function useWebContainer(shouldInitialize: boolean = true) {
   const [webcontainer, setWebcontainer] = useState<WebContainer | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(shouldInitialize);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!shouldInitialize) {
+      setIsLoading(false);
+      return;
+    }
+
     let cancelled = false;
 
     async function bootWebContainer() {
@@ -58,7 +63,7 @@ export function useWebContainer() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [shouldInitialize]);
 
   return { webcontainer, isLoading, error };
 }

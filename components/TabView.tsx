@@ -60,21 +60,6 @@ export function TabView({ activeTab, onTabChange }: TabViewProps) {
           Preview
         </div>
       </motion.button>
-      
-      {/* Animated underline */}
-      <motion.div
-        className="absolute bottom-0 h-0.5 bg-blue-500"
-        initial={false}
-        animate={{
-          x: activeTab === 'code' ? 0 : 80,
-          width: activeTab === 'code' ? 64 : 80
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 300,
-          damping: 30
-        }}
-      />
     </div>
   );
 }

@@ -135,7 +135,7 @@ export function ThinkingStep({
       case 'thinking':
         return (
           <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-            <ThinkingIndicators variant="pulse" size="sm" color="white" />
+            <ThinkingIndicators variant="pulse" size="sm" color="blue" />
           </div>
         );
       default:

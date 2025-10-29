@@ -3,8 +3,13 @@
 import { WebContainer } from '@webcontainer/api';
 import React, { useEffect, useState } from 'react';
 
+interface FileItem {
+  name: string;
+  children?: FileItem[];
+}
+
 interface PreviewFrameProps {
-  files: any[];
+  files: FileItem[];
   webContainer?: WebContainer;
 }
 
@@ -28,7 +33,7 @@ export function PreviewFrame({ files, webContainer }: PreviewFrameProps) {
       // Check if package.json exists
       const hasPackageJson = files.some(file => 
         file.name === 'package.json' || 
-        (file.children && file.children.some(child => child.name === 'package.json'))
+        (file.children && file.children.some((child: FileItem) => child.name === 'package.json'))
       );
       
       if (!hasPackageJson) {

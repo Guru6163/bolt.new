@@ -241,7 +241,6 @@ export const ButterflowWorkflowVisualization = ({
             sourcePosition: Position.Bottom,
           })) ?? [];
 
-        // @ts-expect-error ELK typings are incorrect
         setNodes(layoutedNodes);
         setEdges(edges);
       });

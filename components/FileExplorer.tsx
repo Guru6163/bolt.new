@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FileItem } from '@/lib/types';
 import { ChevronRight, ChevronDown, File, Folder } from 'lucide-react';
 
@@ -30,9 +31,15 @@ export function FileExplorer({ files, onFileSelect }: FileExplorerProps) {
     const paddingLeft = level * 16;
     
     return (
-      <div key={file.path} className="select-none">
-        <div
-          className="flex items-center py-1.5 px-2 hover:bg-gray-100 cursor-pointer transition-colors"
+      <motion.div 
+        key={file.path} 
+        className="select-none"
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+      >
+        <motion.div
+          className="flex items-center py-1.5 px-2 cursor-pointer rounded-md"
           style={{ paddingLeft: `${paddingLeft + 8}px` }}
           onClick={() => {
             if (isFolder) {
@@ -41,32 +48,55 @@ export function FileExplorer({ files, onFileSelect }: FileExplorerProps) {
               onFileSelect(file);
             }
           }}
+          whileHover={{ 
+            backgroundColor: 'rgb(243 244 246)',
+            scale: 1.01,
+            transition: { duration: 0.2 }
+          }}
+          whileTap={{ scale: 0.98 }}
         >
           <div className="flex items-center flex-1 min-w-0 gap-1.5">
             {isFolder ? (
               <>
-                {isExpanded ? (
-                  <ChevronDown className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                ) : (
+                <motion.div
+                  animate={{ rotate: isExpanded ? 90 : 0 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                >
                   <ChevronRight className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                )}
-                <Folder className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                </motion.div>
+                <motion.div
+                  animate={{ 
+                    scale: isExpanded ? [1, 1.1, 1] : 1,
+                  }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Folder className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                </motion.div>
               </>
             ) : (
               <>
                 <div className="w-4" /> {/* Spacer for alignment */}
-                <File className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                <motion.div whileHover={{ scale: 1.1 }}>
+                  <File className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                </motion.div>
               </>
             )}
             <span className="text-sm text-gray-700 truncate">{file.name}</span>
           </div>
-        </div>
-        {isFolder && file.children && isExpanded && (
-          <div>
-            {file.children.map(child => renderFile(child, level + 1))}
-          </div>
-        )}
-      </div>
+        </motion.div>
+        <AnimatePresence>
+          {isFolder && file.children && isExpanded && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {file.children.map(child => renderFile(child, level + 1))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
     );
   };
 

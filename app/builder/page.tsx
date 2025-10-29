@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import { StepsList } from '@/components/StepsList';
 import { FileExplorer } from '@/components/FileExplorer';
 import { TabView } from '@/components/TabView';
@@ -316,13 +317,30 @@ export default function BuilderPage() {
     }
   };
 
+  // Filter messages to show only conversational content, not code/requirements
+  const filteredMessages = llmMessages.filter(message => {
+    if (message.role === 'user') return true;
+    
+    // Filter out messages that contain code-like content or numbered requirements
+    const content = message.content.toLowerCase();
+    const hasCodeIndicators = content.includes('```') || 
+                             content.includes('1.') && content.includes('2.') ||
+                             content.includes('requirements') ||
+                             content.includes('use ') && content.includes('react') ||
+                             content.includes('typescript') ||
+                             content.includes('tailwind') ||
+                             content.includes('jsx');
+    
+    return !hasCodeIndicators;
+  });
+
   return (
     <div className="h-screen bg-white flex flex-col overflow-hidden">
-      {/* Top Bar */}
-      <div className="flex-shrink-0 border-b border-gray-200 bg-white">
+      {/* Top Navigation Bar */}
+      <div className="shrink-0 border-b border-gray-200 bg-white">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
+            <div className="size-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">B</span>
             </div>
             <div>
@@ -332,65 +350,229 @@ export default function BuilderPage() {
           </div>
           
           <div className="flex items-center gap-3">
-            {!(loading || !templateSet) && (
-              <div className="flex items-center gap-2">
-                <input 
+            <div className="flex items-center gap-2">
+              <motion.button 
+                onClick={() => {/* Focus on steps section */}}
+                className="px-3 py-1 text-sm font-medium text-gray-700 hover:text-purple-600 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Steps
+              </motion.button>
+              <motion.button 
+                onClick={() => {/* Focus on chat section */}}
+                className="px-3 py-1 text-sm font-medium text-purple-600 bg-purple-50 rounded-md"
+                whileHover={{ scale: 1.05, backgroundColor: 'rgb(243 232 255)' }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Chat
+              </motion.button>
+            </div>
+            <div className="flex items-center gap-2">
+              <motion.button 
+                onClick={() => setActiveTab('code')}
+                className={`px-3 py-1 text-sm font-medium transition-colors ${
+                  activeTab === 'code' 
+                    ? 'text-purple-600 bg-purple-50 rounded-md' 
+                    : 'text-gray-700 hover:text-purple-600'
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                &lt;/&gt; Code
+              </motion.button>
+              <motion.button 
+                onClick={() => setActiveTab('preview')}
+                className={`px-3 py-1 text-sm font-medium transition-colors ${
+                  activeTab === 'preview' 
+                    ? 'text-purple-600 bg-purple-50 rounded-md' 
+                    : 'text-gray-700 hover:text-purple-600'
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Preview
+              </motion.button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left Sidebar - Steps/Files */}
+        <div className="w-80 border-r border-gray-200 bg-gray-50 flex flex-col">
+        {/* Steps Section */}
+        <div className="h-1/2 border-b border-gray-200">
+          <StepsList
+            steps={steps}
+            currentStep={currentStep}
+            onStepClick={setCurrentStep}
+            loading={loading || !templateSet}
+          />
+        </div>
+        
+        {/* File Explorer Section */}
+        <div className="h-1/2">
+          <FileExplorer 
+            files={files} 
+            onFileSelect={setSelectedFile}
+          />
+        </div>
+      </div>
+
+      {/* Middle Section - Chat */}
+      <div className="w-96 border-r border-gray-200 bg-white flex flex-col">
+        {/* Chat Header */}
+        <div className="shrink-0 border-b border-gray-200 bg-white px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="size-8 bg-gradient-to-br from-purple-500 to-blue-600 rounded-lg flex items-center justify-center">
+              <span className="text-white font-bold text-sm">B</span>
+            </div>
+            <div>
+              <h1 className="text-sm font-semibold text-gray-900">Chat</h1>
+              <p className="text-xs text-gray-500 truncate max-w-xs">{prompt}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Chat Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <AnimatePresence mode="popLayout">
+            {filteredMessages.map((message, index) => (
+              <motion.div
+                key={`${message.role}-${index}`}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ 
+                  duration: 0.3, 
+                  delay: index * 0.05,
+                  ease: [0.16, 1, 0.3, 1]
+                }}
+              >
+                <motion.div
+                  className={`max-w-[80%] rounded-lg px-3 py-2 ${
+                    message.role === 'user'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-100 text-gray-900'
+                  }`}
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                </motion.div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          <AnimatePresence>
+            {loading && (
+              <motion.div 
+                className="flex justify-start"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+              >
+                <div className="bg-gray-100 rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <motion.div 
+                      className="size-2 bg-gray-400 rounded-full"
+                      animate={{ y: [0, -8, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut" }}
+                    />
+                    <motion.div 
+                      className="size-2 bg-gray-400 rounded-full"
+                      animate={{ y: [0, -8, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.15 }}
+                    />
+                    <motion.div 
+                      className="size-2 bg-gray-400 rounded-full"
+                      animate={{ y: [0, -8, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Chat Input */}
+        <AnimatePresence>
+          {!(loading || !templateSet) && (
+            <motion.div 
+              className="shrink-0 border-t border-gray-200 p-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="flex gap-2">
+                <motion.input 
                   type="text"
                   value={userPrompt} 
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="Ask for changes..."
-                  className="w-64 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   onKeyPress={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault();
                       handleSendMessage();
                     }
                   }}
+                  whileFocus={{ scale: 1.01 }}
+                  transition={{ duration: 0.2 }}
                 />
-                <button 
+                <motion.button 
                   onClick={handleSendMessage}
-                  className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors"
+                  className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg"
+                  whileHover={{ 
+                    scale: 1.05,
+                    backgroundColor: 'rgb(126 34 206)',
+                    boxShadow: '0 4px 12px rgba(168, 85, 247, 0.4)'
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
                 >
                   Send
-                </button>
+                </motion.button>
               </div>
-            )}
-          </div>
-        </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
-      
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Sidebar - Collapsible */}
-        <div className="w-80 border-r border-gray-200 bg-gray-50 flex flex-col">
-          {/* Steps Section */}
-          <div className="h-1/2 border-b border-gray-200">
-            <StepsList
-              steps={steps}
-              currentStep={currentStep}
-              onStepClick={setCurrentStep}
-              loading={loading || !templateSet}
-            />
-          </div>
-          
-          {/* File Explorer Section */}
-          <div className="h-1/2">
-            <FileExplorer 
-              files={files} 
-              onFileSelect={setSelectedFile}
-            />
-          </div>
-        </div>
 
-        {/* Main Content Area */}
+        {/* Right Section - Viewer */}
         <div className="flex-1 flex flex-col bg-white">
           <TabView activeTab={activeTab} onTabChange={setActiveTab} />
-          <div className="flex-1 min-h-0">
-            {activeTab === 'code' ? (
+          <div className="flex-1 min-h-0 relative">
+            {/* Code Editor - stays mounted but hidden */}
+            <motion.div
+              className="absolute inset-0"
+              initial={false}
+              animate={{ 
+                opacity: activeTab === 'code' ? 1 : 0,
+                pointerEvents: activeTab === 'code' ? 'auto' : 'none'
+              }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            >
               <CodeEditor file={selectedFile} loading={loading || !templateSet} />
-            ) : (
+            </motion.div>
+            
+            {/* Preview Frame - stays mounted but hidden */}
+            <motion.div
+              className="absolute inset-0"
+              initial={false}
+              animate={{ 
+                opacity: activeTab === 'preview' ? 1 : 0,
+                pointerEvents: activeTab === 'preview' ? 'auto' : 'none'
+              }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            >
               <PreviewFrame webContainer={webcontainer ?? undefined} files={files} />
-            )}
+            </motion.div>
           </div>
         </div>
       </div>

@@ -53,14 +53,6 @@ export function PreviewFrame({ files, webContainer, isLoading = false }: Preview
             setIsInitializing(false);
           }
         });
-
-        // Also check if server is already running
-        const serverUrl = webContainer.url;
-        if (serverUrl) {
-          console.log('Server already running at:', serverUrl);
-          setUrl(serverUrl);
-          setIsInitializing(false);
-        }
       } catch (error) {
         console.error('Error in WebContainer setup:', error);
         setIsInitializing(false);
@@ -75,7 +67,7 @@ export function PreviewFrame({ files, webContainer, isLoading = false }: Preview
   }, [webContainer]);
 
   return (
-    <div className="h-full bg-white">
+    <div className="h-full w-full bg-white flex flex-col">
       {isLoading ? (
         <div className="h-full flex flex-col items-center justify-center text-gray-400">
           <div className="text-center">
@@ -114,17 +106,33 @@ export function PreviewFrame({ files, webContainer, isLoading = false }: Preview
           </div>
         </div>
       ) : (
-        <div className="h-full flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           <div className="text-xs text-gray-400 p-2 bg-gray-50 flex-shrink-0">Debug: Loading {url}</div>
-          <iframe 
-            width="100%" 
-            height="100%"
-            src={url}
-            className="border-0 flex-1"
-            title="Preview"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-            style={{ minHeight: '0' }}
-          />
+          <div className="flex-1 min-h-0">
+            <iframe 
+              width="100%" 
+              height="100%"
+              src={url}
+              className="border-0 w-full h-full"
+              title="Preview"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
+              style={{ 
+                minHeight: '0',
+                height: '100%',
+                width: '100%',
+                display: 'block',
+                border: 'none',
+                outline: 'none',
+                flex: '1 1 0%'
+              }}
+              onLoad={() => {
+                console.log('Iframe loaded successfully');
+              }}
+              onError={(e) => {
+                console.error('Iframe load error:', e);
+              }}
+            />
+          </div>
         </div>
       )}
     </div>

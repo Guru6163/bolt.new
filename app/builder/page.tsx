@@ -25,7 +25,9 @@ export default function BuilderPage() {
   const [llmMessages, setLlmMessages] = useState<{role: "user" | "assistant", content: string;}[]>([]);
   const [loading, setLoading] = useState(false);
   const [templateSet, setTemplateSet] = useState(false);
-  const { webcontainer, isLoading: webcontainerLoading, error: webcontainerError } = useWebContainer();
+  const [projectReady, setProjectReady] = useState(false);
+  
+  const { webcontainer, isLoading: webcontainerLoading, error: webcontainerError } = useWebContainer(projectReady);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [activeTab, setActiveTab] = useState<'code' | 'preview'>('code');
@@ -35,7 +37,6 @@ export default function BuilderPage() {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [showErrorDialog, setShowErrorDialog] = useState(false);
-  const [projectReady, setProjectReady] = useState(false);
 
   const handleError = useCallback((errorMessage: string) => {
     setError(errorMessage);
@@ -133,7 +134,7 @@ export default function BuilderPage() {
       }
     }
     console.log(files);
-  }, [steps, files, selectedFile, projectReady]);
+  }, [steps, selectedFile, projectReady]);
 
   // Switch to preview tab when project is ready and files exist
   useEffect(() => {
@@ -184,25 +185,20 @@ export default function BuilderPage() {
       return mountStructure;
     };
   
+    // Only mount if we have files, project is ready, and WebContainer is available
+    if (files.length === 0 || !projectReady || !webcontainer) {
+      return;
+    }
+
     const mountStructure = createMountStructure(files);
   
     // Mount the structure if WebContainer is available
     console.log('Files to mount:', files);
     console.log('Mount structure:', JSON.stringify(mountStructure, null, 2));
     
-    if (webcontainer) {
-      console.log('Mounting to WebContainer...');
-      webcontainer.mount(mountStructure);
-    } else {
-      console.log('WebContainer not available for mounting');
-      console.log('WebContainer loading:', webcontainerLoading);
-      console.log('WebContainer error:', webcontainerError);
-      
-      if (webcontainerError) {
-        console.error('WebContainer error:', webcontainerError);
-      }
-    }
-  }, [files, webcontainer]);
+    console.log('Mounting to WebContainer...');
+    webcontainer.mount(mountStructure);
+  }, [files, webcontainer, projectReady]);
 
   const init = useCallback(async () => {
     try {
@@ -571,7 +567,11 @@ export default function BuilderPage() {
               }}
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
             >
-              <PreviewFrame webContainer={webcontainer ?? undefined} files={files} />
+              <PreviewFrame 
+                webContainer={webcontainer ?? undefined} 
+                files={files} 
+                isLoading={webcontainerLoading}
+              />
             </motion.div>
           </div>
         </div>
